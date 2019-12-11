@@ -1,6 +1,6 @@
 <template>
-    <div class='modelList' :class='showList ? "show" : "hidden"' @click='showList = false'>
-        <ul class='contextMenu' :style='menuPosition'>
+    <div @click='showList = false'>
+        <ul class='contextMenu' :class='showList ? "show" : "hidden"' :style='menuPosition'>
             <li v-for='(name, index) in alias' :key='`_${index}`'
                 class='li'
                 @mouseenter='setBackground($event)'
@@ -23,7 +23,7 @@
 </template>
 
 <script>
-import { L2Dwidget as Live2DWidget } from 'live2d-widget/src/index'
+import { L2Dwidget as Live2DWidget } from './src/index'
 
 function on (dom, eventName, callback)
 {
@@ -35,32 +35,35 @@ function off (dom, eventName)
     dom[`on${eventName}`] = null
 }
 
+const TIMEOUT = 60
+
 export default {
     data () {
         const model = {
-            // 部分模型崩坏...
-            // nij: 'ni-j',
-            epsilon: 'epsilon2_1',
-            gf: 'gf',
-            nico: 'nico',
-            chitose: 'chitose',
+            koharu: 'koharu',
+            haruto: 'haruto',
+            z16: 'z16',
             haru私服: 'haru01',
             haru制服: 'haru02',
-            haruto: 'haruto',
-            koharu: 'koharu',
             hibiki: 'hibiki',
             黑猫: 'hijiki',
             izumi: 'izumi',
             初音: 'miku',
-            n: 'nietzsche',
-            nipsilon: 'nipsilon',
-            nito: 'nito',
             shizuku: 'shizuku',
             白猫: 'tororo',
+            chitose: 'chitose',
+
+            // 以下模型崩坏...
             tsumiki: 'tsumiki',
+            nito: 'nito',
+            n: 'nietzsche',
             大鳥こはく: 'unitychan',
+            epsilon: 'epsilon2_1',
+            nico: 'nico',
             汪酱: 'wanko',
-            z16: 'z16',
+            // nipsilon: 'nipsilon',
+            // nij: 'ni-j',
+            // gf: 'gf',
         }
         const alias = Object.keys(model)
 
@@ -76,7 +79,6 @@ export default {
             showList: false,
             menuPosition: {},
             canvasId: 'live2DCanvas',
-            timeout: 60,
         }
     },
     watch: {
@@ -93,7 +95,7 @@ export default {
             document.getElementById(this.canvasId).remove()
         },
         switchDialog () {
-            // 请求还存在...
+            // TODO 请求还存在...
             this.dialog = !this.dialog
             this.init(true)
         },
@@ -114,10 +116,10 @@ export default {
                     jsonPath: model,
                 },
                 display: {
-                    // width、height实际值为其值 * 超采样等级(默认2, 即2倍)
+                    // width、height实际值公式为 其值 * 超采样等级 (默认2, 即2倍)
                     width: 200,
                     height: 400,
-                    position: 'left',
+                    position: 'right',
                     hOffset: 0,
                     vOffset: 0,
                 },
@@ -133,12 +135,14 @@ export default {
                 dev: {
                     border: false,
                 },
-                // 跨域问题...
                 dialog: {
                     enable: this.dialog,
                     hitokoto: true,
                 }
             })
+        },
+        getDialog () {
+            return document.getElementsByClassName('live2d-widget-dialog-container')[0]
         },
         getModelSrc (aliasName) {
             const modelName = this.model[aliasName]
@@ -197,6 +201,15 @@ export default {
                         const moveEvent = e || window.event
                         canvas.style.left = moveEvent.clientX - canvasX + 'px'
                         canvas.style.top = moveEvent.clientY - canvasY + 'px'
+
+                        // dialog的位置变动...
+                        const dialog = this.getDialog()
+                        if (dialog)
+                        {
+                            dialog.style.position = 'absolute'
+                            dialog.style.left = Number.parseInt(canvas.style.left) - 70 + 'px'
+                            dialog.style.top = Number.parseInt(canvas.style.top) + 'px'
+                        }
                     })
                 }
             })
@@ -214,7 +227,6 @@ export default {
                 this.menuPosition = {
                     left: (event.clientX + 10) + 'px',
                     top: (event.clientY - menuHeight) + 'px',
-                    display: 'block',
                 }
                 this.showList = true
             })
@@ -223,23 +235,28 @@ export default {
             if (reload === false)
             {
                 // 第一次随机加载一个... Math.random得到 [0, 1) 区间的数
-                // const num = Math.floor(Math.random() * alias.length)
-                const randomAlias = this.alias[6]// 20]
+                // 12为模型正常的前12个...
+                const index = Math.floor(Math.random() * 12)
+                const randomAlias = this.alias[index]
                 this.currentModel = this.getModelSrc(randomAlias)
             }
             this.create(this.currentModel)
             this.eventInit()
         },
+        hideContext () {
+            document.onclick = () => {
+                this.showList = false
+            }  
+        },
         eventInit () {
             let time = 0
-            const canvasId = this.canvasId
             let interval = setInterval(() => {
                 time++
-                if (time > this.timeout)
+                if (time > TIMEOUT)
                 {
                     clearInterval(interval)
                 }
-                const canvas = document.getElementById(canvasId)
+                const canvas = document.getElementById(this.canvasId)
                 if (canvas)
                 {
                     clearInterval(interval)
@@ -248,6 +265,7 @@ export default {
                     this.mouseWheel(canvas)
                     this.drag(canvas)
                     this.contextMenu(canvas)
+                    this.hideContext()
                 }
             }, 1000)
         }
@@ -259,14 +277,6 @@ export default {
 </script>
 
 <style scoped>
-    .modelList {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 9999;
-    }
     .contextMenu {
         position: absolute;
         border-radius: 4px;
@@ -278,6 +288,8 @@ export default {
         background: rgba(0, 173, 181, .8);
         /* background: #00adb5; */
         box-shadow: 0 3px 12px rgba(0, 173, 181, .8);
+        padding: 0;
+        z-index: 9999;
     }
     .li {
         list-style: none;
@@ -304,19 +316,19 @@ export default {
         height: 50px;
         background: rgb(204, 204, 255, .3);
     }
-     .contextMenu::-webkit-scrollbar-corner,
-     .contextMenu::-webkit-scrollbar-thumb,
-     .contextMenu::-webkit-scrollbar-track {
-       border-radius: 4px;
-     }
-     /* 滚动条轨道 */
-     .contextMenu::-webkit-scrollbar-corner,
-     .contextMenu::-webkit-scrollbar-track {
-       background-color: rgba(180, 160, 120, 0.1);
-       box-shadow: inset 0 0 1px rgba(180, 160, 120, 0.5);
-     }
-     /* 滚动条手柄 */
-     .contextMenu::-webkit-scrollbar-thumb {
-       background-color: pink;
-     }
+    .contextMenu::-webkit-scrollbar-corner,
+    .contextMenu::-webkit-scrollbar-thumb,
+    .contextMenu::-webkit-scrollbar-track {
+        border-radius: 4px;
+    }
+    /* 滚动条轨道 */
+    .contextMenu::-webkit-scrollbar-corner,
+    .contextMenu::-webkit-scrollbar-track {
+        background-color: rgba(180, 160, 120, 0.1);
+        box-shadow: inset 0 0 1px rgba(180, 160, 120, 0.5);
+    }
+    /* 滚动条手柄 */
+    .contextMenu::-webkit-scrollbar-thumb {
+        background-color: pink;
+    }
 </style>
