@@ -278,7 +278,7 @@ export default {
 
 <style scoped>
     .contextMenu {
-        position: absolute;
+        position: fixed;
         border-radius: 4px;
         left: 300px;
         color: #F5D399;

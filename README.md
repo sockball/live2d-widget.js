@@ -3,9 +3,9 @@ live2d简单修改版vue组件...（可选、可拖动、可放大缩小...）
 ![sample](./sample.png)
 
 ## TODO
-* 启用dialog后再关闭，请求并未停止...
-* 退出及重新加载的过渡动画、重新加载的位置记忆
-* 客户端设定及记忆
+* [ ] 启用dialog后再关闭，请求并未停止...
+* [ ] 退出及重新加载的过渡动画、重新加载的位置记忆
+* [ ] 客户端设定及记忆
 
 ## Demo
 ⚠ Webpack打包时会出现错误 `window is not defined` 以下demo来自[参考解决方案](https://zhuanlan.zhihu.com/p/36233639)
